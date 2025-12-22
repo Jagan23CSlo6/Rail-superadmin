@@ -1,0 +1,37 @@
+http://localhost:5127/api/super-admin/register
+
+{
+    "super_admin_name" : "ratheesh", 
+    "phone_number" : "8098501226", 
+    "email" : "ratheesh@gmail.com", 
+    "password" : "1234"
+}
+
+http://localhost:5127/api/super-admin/login
+
+{
+    "email" : "ratheesh@gmail.com", 
+    "password" : "1234"
+}
+
+
+http://localhost:5127/api/admin/register
+
+{
+  "super_admin_id": 1,
+  "admin_name": "John Doe",
+  "phone_number": "9876543210",
+  "location": "Mumbai",
+  "login_id": "admin001",
+  "password": "1234",
+  "duration": 12,
+  "amount": 5000.00,
+  "payment_status": "Paid"
+}
+
+http://localhost:5127/api/admin/login
+
+{
+  "login_id": "rat@gmail.com",
+  "password": "1234"
+}
