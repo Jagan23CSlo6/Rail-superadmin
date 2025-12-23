@@ -7,6 +7,12 @@ const dotenv = require("dotenv");
 dotenv.config();
 const PORT = process.env.PORT;
 
+// Middleware to parse JSON requests
+app.use(express.json());
+
+// Routes
+app.use("/api/super-admin/v1/auth", require("./routes/super-admin.routes"));
+
 // Starting the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
