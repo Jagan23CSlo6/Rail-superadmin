@@ -839,6 +839,158 @@ const getDashboardSummary = async (req, res) => {
   }
 };
 
+// ============================================
+// GET - Get Admin Pricing Details by ID
+// ============================================
+const getAdminPricing = async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({
+      message: "Admin ID is required",
+    });
+  }
+
+  const client = await db.connect();
+  try {
+    const query = `
+      SELECT 
+        admin_id,
+        admin_name,
+        duration,
+        amount,
+        payment_status,
+        join_date,
+        next_payment_date
+      FROM admin_accounts
+      WHERE admin_id = $1;
+    `;
+
+    const { rows } = await client.query(query, [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message: "Admin not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      pricing: rows[0],
+    });
+  } catch (error) {
+    console.error("Error fetching admin pricing:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  } finally {
+    client.release();
+  }
+};
+
+// ============================================
+// UPDATE - Update Admin Pricing Details
+// ============================================
+const updateAdminPricing = async (req, res) => {
+  const { id } = req.params;
+  const { duration, amount, payment_status } = req.body;
+
+  if (!id) {
+    return res.status(400).json({
+      message: "Admin ID is required",
+    });
+  }
+
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Check if admin exists
+    const checkQuery = `SELECT admin_id FROM admin_accounts WHERE admin_id = $1;`;
+    const { rows: adminExists } = await client.query(checkQuery, [id]);
+
+    if (adminExists.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        message: "Admin not found",
+      });
+    }
+
+    // Build dynamic update query
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (duration !== undefined) {
+      updates.push(`duration = $${paramCount}`);
+      values.push(duration);
+      paramCount++;
+
+      // Update next_payment_date if duration changes
+      updates.push(
+        `next_payment_date = CURRENT_DATE + make_interval(months => $${values.length})`
+      );
+    }
+
+    if (amount !== undefined) {
+      updates.push(`amount = $${paramCount}`);
+      values.push(amount);
+      paramCount++;
+    }
+
+    if (payment_status !== undefined) {
+      updates.push(`payment_status = $${paramCount}`);
+      values.push(payment_status);
+      paramCount++;
+    }
+
+    if (updates.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        message: "No fields to update",
+      });
+    }
+
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    values.push(id);
+
+    const updateQuery = `
+      UPDATE admin_accounts 
+      SET ${updates.join(", ")}
+      WHERE admin_id = $${values.length}
+      RETURNING 
+        admin_id,
+        admin_name,
+        duration,
+        amount,
+        payment_status,
+        join_date,
+        next_payment_date,
+        updated_at;
+    `;
+
+    const { rows } = await client.query(updateQuery, values);
+
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin pricing updated successfully",
+      admin: rows[0],
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error updating admin pricing:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   createAdmin,
   getAllAdmins,
@@ -849,4 +1001,6 @@ module.exports = {
   deleteAdmin,
   adminLogin,
   getDashboardSummary,
+  getAdminPricing,
+  updateAdminPricing,
 };
