@@ -1,0 +1,28 @@
+service: railway-backend
+frameworkVersion: "4"
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  stage: dev
+  region: us-east-1
+  environment:
+    DB_HOST: ${env:DB_HOST}
+    DB_PORT: ${env:DB_PORT}
+    DB_USER: ${env:DB_USER}
+    DB_PASSWORD: ${env:DB_PASSWORD}
+    DB_NAME: ${env:DB_NAME}
+    SECURE_CODE: ${env:SECURE_CODE}
+
+functions:
+  registerSuperAdmin:
+    handler: lambda/signup.signUpHandler
+    events:
+      - http:
+          path: auth/register-super-admin
+          method: post
+          cors: true
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
