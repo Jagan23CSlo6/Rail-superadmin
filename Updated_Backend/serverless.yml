@@ -3,7 +3,7 @@ frameworkVersion: "4"
 
 provider:
   name: aws
-  runtime: nodejs22.x
+  runtime: nodejs25.2.0
   stage: dev
   region: us-east-1
   environment:
@@ -16,10 +16,10 @@ provider:
 
 functions:
   registerSuperAdmin:
-    handler: lambda/signup.signUpHandler
+    handler: lambda/login.handler.signUpHandler
     events:
       - http:
-          path: auth/register-super-admin
+          path: api/super-admin/v1/auth/signup
           method: post
           cors: true
 
