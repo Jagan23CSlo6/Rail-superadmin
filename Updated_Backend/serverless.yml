@@ -3,7 +3,7 @@ frameworkVersion: "4"
 
 provider:
   name: aws
-  runtime: nodejs25.2.0
+  runtime: nodejs18.x
   stage: dev
   region: us-east-1
   environment:
@@ -16,7 +16,7 @@ provider:
 
 functions:
   registerSuperAdmin:
-    handler: lambda/login.handler.signUpHandler
+    handler: lambda/authsignUpHandler
     events:
       - http:
           path: api/super-admin/v1/auth/signup
@@ -24,7 +24,7 @@ functions:
           cors: true
 
   loginSuperAdmin:
-    handler: lambda/login.handler.loginHandler
+    handler: lambda/auth.loginHandler
     events:
       - http:
           path: api/super-admin/v1/auth/login
@@ -32,7 +32,7 @@ functions:
           cors: true
 
   getAdminsList:
-    handler: lambda/lists.handler.getAdminsListHandler
+    handler: lambda/lists.getAdminsListHandler
     events:
       - http:
           path: api/super-admin/v1/admins-list
@@ -40,5 +40,9 @@ functions:
           cors: true
 
 plugins:
-  - serverless-dotenv-plugin
   - serverless-offline
+
+custom:
+  serverless-offline:
+    useDocker: false
+    noPrependStageInUrl: true
