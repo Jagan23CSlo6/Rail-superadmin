@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
-const { createSuperAdmin } = require("../models/auth.models");
+const jwt = require("jsonwebtoken");
+const { createSuperAdmin, handleLogin } = require("../models/auth.models");
 
 module.exports.registerSuperAdmin = async (datas) => {
     
@@ -8,21 +9,21 @@ module.exports.registerSuperAdmin = async (datas) => {
     if (!secureCode || secureCode.trim() !== process.env.SECURE_CODE?.trim()) {
     return {
       statusCode: 401,
-      body: { message: "Unauthorized" },
+      message: "Unauthorized",
     };
   }
 
     if(!username || !password || !name) {
         return {
             statusCode: 400,
-            body: { message: "All fields are required" }
+            message: "All fields are required"
         };
     }
 
     if(password.length < 8) {
         return {
             statusCode: 400,
-            body: { message: "Password must be at least 8 characters long" }
+            message: "Password must be at least 8 characters long"
         };
     };
 
@@ -33,13 +34,47 @@ module.exports.registerSuperAdmin = async (datas) => {
     if(!superAdmin) {
         return {
             statusCode: 500,
-            body: { message: "Internal Server Error" }
+            message: "Internal Server Error"
         }
     }
 
     return {
         statusCode: 201,
-        body: { message: "Super Admin registered successfully" }
+        message: "Super Admin registered successfully"
     }
 
+}
+
+module.exports.loginSuperAdmin = async (datas) => {
+    
+    const { username, password } = datas;
+
+    if(!username || !password) {
+        return {
+            statusCode: 400,
+            message: "Username and password are required"
+        };
+    }
+
+    const result = await handleLogin({ username, password });
+
+    if(!result.success) {
+        return {
+            statusCode: 401,
+            message: "Invalid credentials"
+        };
+    }
+
+    const token = jwt.sign(
+        { username: username, name: result.name },
+        process.env.JWT_SECRET,
+        { expiresIn: "24h" }
+    );
+
+    return {
+        statusCode: 200,
+        message: "Login successful",
+        name: result.name,
+        token: token
+    };
 }
