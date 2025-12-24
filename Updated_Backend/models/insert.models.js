@@ -37,13 +37,14 @@ module.exports.insertAdmin = async ({ adminId, fullName, email, mobileNumber, pa
             amount
         ];
 
-        const result = await client.query(insertQuery, values);
+        await client.query(insertQuery, values);
 
         await client.query('COMMIT');
 
         return true;
 
     } catch (error) {
+        console.error('Transaction error:', error);
         await client.query('ROLLBACK');
         console.error('Error inserting admin:', error);
         return false;

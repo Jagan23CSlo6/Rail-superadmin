@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const db = require('../db/db');
+const redisClient = require('../config/redis');
 
 const { insertAdmin } = require('../models/insert.models');
 // Generating the admin ID in format (ADM001, ADM002, ...)
@@ -60,9 +61,18 @@ module.exports.createAdmin = async (datas) => {
 
   const result = await insertAdmin(adminData);
 
-  if(!result.success) {
+  if(result.success) {
     console.error('Failed to create admin account');
     return { statusCode: 500, message: 'Internal Server Error' };
+  }
+
+  // Delete admins list cache after successful insertion
+  try {
+    await redisClient.del('admins_list');
+    console.log('Admins list cache invalidated');
+  } catch (cacheError) {
+    console.error('Error invalidating cache:', cacheError);
+    // Don't fail the request if cache deletion fails
   }
 
   return { statusCode: 200, message: "Created Successfully" };
