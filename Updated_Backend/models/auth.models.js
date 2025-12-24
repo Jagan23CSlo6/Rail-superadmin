@@ -11,6 +11,7 @@ module.exports.createSuperAdmin = async ({ name, username, password }) => {
         await db.query(query, values);
         return true;
     } catch (error) {
+        console.error(error);
         return false;
     }
 };
@@ -18,7 +19,7 @@ module.exports.createSuperAdmin = async ({ name, username, password }) => {
 // Handling logins
 module.exports.handleLogin = async ({ username, password }) => {
 
-    const query = "SELECT super_admin_name, password FROM public.super_admin WHERE username=$1;";
+    const query = "SELECT name, password FROM public.super_admin WHERE username=$1;";
     const values = [username];
 
     try {
@@ -36,7 +37,7 @@ module.exports.handleLogin = async ({ username, password }) => {
 
         return {
             success: true,
-            name: res.rows[0].super_admin_name
+            name: res.rows[0].name
         };
     }
 
