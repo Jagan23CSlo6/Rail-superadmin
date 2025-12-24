@@ -1,5 +1,4 @@
 const db = require('../db/db');
-const bcrypt = require('bcrypt');
 
 module.exports.insertAdmin = async ({ adminId, fullName, email, mobileNumber, password, paymentStatus, duration, amount }) => {
     const client = await db.connect();
