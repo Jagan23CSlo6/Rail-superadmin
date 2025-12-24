@@ -1,5 +1,7 @@
 const express = require('express');
 const { registerSuperAdmin, loginSuperAdmin } = require('../controller/auth.controller');
+const { verifyToken } = require('../middleware/auth.middleware');
+const { getAdminsList } = require("../controller/lists.controller");
 const router = express.Router();
 
 router.post("/signup", async (req, res) => {
@@ -27,6 +29,16 @@ router.post("/login", async (req, res) => {
     }
     
     res.status(result.statusCode).json({ message: result.message });
+});
+
+router.get("/admins-list", async (req, res) => {
+    const datas = await getAdminsList();
+    if(datas.statusCode && datas.statusCode === 200) {
+        return res.status(200).json({
+            data: datas.data
+        });
+    }
+    res.status(500).json({ message: "Internal Server Error" });
 });
 
 module.exports = router;

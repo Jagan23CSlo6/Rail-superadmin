@@ -14,6 +14,7 @@ app.use(cookieParser());
 
 // Routes
 app.use("/api/super-admin/v1/auth", require("./routes/super-admin.routes"));
+app.use("/api/super-admin/v1", require("./routes/super-admin.routes"));
 
 // Starting the server
 app.listen(PORT, () => {
