@@ -39,6 +39,14 @@ functions:
           method: get
           cors: true
 
+  createAdmin:
+    handler: lambda/insert.createAdminHandler
+    events:
+      - http:
+          path: api/super-admin/v1/create-admin
+          method: post
+          cors: true
+
 plugins:
   - serverless-offline
 
