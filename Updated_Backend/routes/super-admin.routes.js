@@ -70,4 +70,23 @@ router.get("/report-summary", async (req, res) => {
     }
 });
 
+// Month based revenue report
+router.get("/month-revenue/:month", async (req, res) => {
+    const month = req.params.month;
+
+    try {
+        const result = await getMonthRevenue(month);
+
+        return res.status(result.statusCode).json({
+            message: result.message,
+            data: result.data ?? {}
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "Internal server error",
+            data: {}
+        });
+    }
+});
+
 module.exports = router;

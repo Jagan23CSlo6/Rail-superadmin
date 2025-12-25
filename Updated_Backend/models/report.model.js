@@ -31,3 +31,38 @@ module.exports.sendReport = async () => {
         };
     }
 };
+
+module.exports.sendMonthRevenue = async ({ month }) => {
+    try {
+        const currentYear = new Date().getFullYear();
+        
+        const startDate = `${currentYear}-${String(month).padStart(2, '0')}-01`;
+        
+        // Calculate the next month for end date
+        const nextMonth = month === 12 ? 1 : month + 1;
+        const nextYear = month === 12 ? currentYear + 1 : currentYear;
+        const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+
+        const query = `
+            SELECT
+                COALESCE(SUM(b.total_amount), 0) AS total_amount_month
+            FROM bookings b
+            WHERE b.created_at >= $1 AND b.created_at < $2
+        `;
+
+        const result = await db.query(query, [startDate, endDate]);
+
+        return {
+            success: true,
+            data: {
+                totalAmountMonth: Number(result.rows[0].total_amount_month),
+            }
+        };
+    } catch (error) {
+        console.error("Error fetching monthly revenue:", error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}

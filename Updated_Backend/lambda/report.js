@@ -1,4 +1,4 @@
-const { getReport } = require('../controller/report.controller');
+const { getReport, getMonthRevenue } = require('../controller/report.controller');
 const { verifyTokenFromEvent } = require('./middleware/verifyToken');
 
 // Handler for getting report data
@@ -40,6 +40,64 @@ module.exports.getReportHandler = async (event) => {
 
     } catch (err) {
         console.error('Report Handler Error:', err);
+
+        return {
+            statusCode: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Credentials': true,
+            },
+            body: JSON.stringify({
+                statusCode: 500,
+                message: 'Internal server error'
+            }),
+        };
+    }
+};
+
+// Handler for getting monthly revenue
+module.exports.getMonthRevenueHandler = async (event) => {
+    // Verify token
+    const tokenVerification = verifyTokenFromEvent(event);
+
+    // if (!tokenVerification.valid) {
+    //     return {
+    //         statusCode: 401,
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //             'Access-Control-Allow-Origin': '*',
+    //             'Access-Control-Allow-Credentials': true,
+    //         },
+    //         body: JSON.stringify({
+    //             statusCode: 401,
+    //             message: tokenVerification.message
+    //         }),
+    //     };
+    // }
+
+    try {
+        // Extract month from query parameters or path parameters
+        const month = event.queryStringParameters?.month || event.pathParameters?.month;
+        
+        const result = await getMonthRevenue(month);
+        
+        return {
+            statusCode: result.statusCode,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Credentials': true,
+            },
+            body: JSON.stringify({
+                statusCode: result.statusCode,
+                message: result.message,
+                data: result.data || null
+            }),
+        };
+
+    } catch (err) {
+        console.error('Month Revenue Handler Error:', err);
 
         return {
             statusCode: 500,

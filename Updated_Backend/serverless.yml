@@ -55,6 +55,18 @@ functions:
           method: get
           cors: true
 
+  getMonthRevenue:
+    handler: lambda/report.getMonthRevenueHandler
+    events:
+      - http:
+          path: api/super-admin/v1/month-revenue/{month}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                month: true
+
 plugins:
   - serverless-offline
 
