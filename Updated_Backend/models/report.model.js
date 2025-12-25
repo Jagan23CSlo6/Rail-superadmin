@@ -66,3 +66,46 @@ module.exports.sendMonthRevenue = async ({ month }) => {
         };
     }
 }
+
+module.exports.sendYearlyRevenueGraph = async ({ year }) => {
+    try {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        const query = `
+            SELECT 
+                EXTRACT(MONTH FROM created_at)::int AS month,
+                SUM(total_amount)::numeric AS amount
+            FROM bookings
+            WHERE created_at >= make_date($1, 1, 1)
+              AND created_at <  make_date($1 + 1, 1, 1)
+            GROUP BY month
+            ORDER BY month
+        `;
+
+        const { rows } = await db.query(query, [year]);
+
+        const monthlyMap = Object.fromEntries(
+            rows.map(r => [r.month, Number(r.amount)])
+        );
+
+        const graphData = monthNames.map((name, i) => ({
+            month: name,
+            amount: monthlyMap[i + 1] || 0
+        }));
+
+        return {
+            success: true,
+            data: {
+                year,
+                months: graphData
+            }
+        };
+    } catch (error) {
+        console.error("Error fetching yearly revenue graph:", error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+};
+
