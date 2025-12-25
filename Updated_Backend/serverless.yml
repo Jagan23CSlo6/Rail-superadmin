@@ -47,6 +47,14 @@ functions:
           method: post
           cors: true
 
+  getReport:
+    handler: lambda/report.getReportHandler
+    events:
+      - http:
+          path: api/super-admin/v1/report-summary
+          method: get
+          cors: true
+
 plugins:
   - serverless-offline
 
