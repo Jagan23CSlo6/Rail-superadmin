@@ -3,6 +3,7 @@ const { registerSuperAdmin, loginSuperAdmin } = require('../controller/auth.cont
 const { verifyToken } = require('../middleware/auth.middleware');
 const { getAdminsList } = require("../controller/lists.controller");
 const { createAdmin } = require('../controller/insert.controller');
+const { getReport } = require("../controller/report.controller");
 const router = express.Router();
 
 // Adding the super admin
@@ -51,5 +52,22 @@ router.post("/create-admin", async (req, res) => {
     const result = await createAdmin(datas);
     res.status(result.statusCode).json({ message: result.message });
 })
+
+// Year based static report
+router.get("/report-summary", async (req, res) => {
+    try {
+        const result = await getReport();
+
+        return res.status(result.statusCode).json({
+            message: result.message,
+            data: result.data ?? {}
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "Internal server error",
+            data: {}
+        });
+    }
+});
 
 module.exports = router;

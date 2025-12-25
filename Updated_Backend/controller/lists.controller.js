@@ -38,7 +38,6 @@ module.exports.getAdminsList = async () => {
         console.error('Redis get error:', redisError);
     }
     
-    // Fetch from database
     const result = await adminsList();
 
     if (!result.success) {
@@ -48,7 +47,6 @@ module.exports.getAdminsList = async () => {
         };
     }
 
-    // Format the data
     const formattedData = result.data.map(admin => ({
         id: admin.admin_id,
         name: admin.full_name,
