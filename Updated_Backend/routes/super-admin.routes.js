@@ -141,4 +141,19 @@ router.get("/admin-details/:adminId", async (req, res) => {
     }
 });
 
+// Delete the admin
+router.delete("/delete-admin/:adminId", async (req, res) => {
+    try {
+        const result = await deleteAdmin(req.params.adminId);
+
+        return res.status(result.statusCode).json({
+            message: result.message,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "Internal server error",
+        });
+    }
+});
+
 module.exports = router;

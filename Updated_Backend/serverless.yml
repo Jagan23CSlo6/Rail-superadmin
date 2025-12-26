@@ -67,6 +67,18 @@ functions:
               paths:
                 adminId: true
 
+  deleteAdmin:
+    handler: lambda/insert.deleteAdminHandler
+    events:
+      - http:
+          path: api/super-admin/v1/delete-admin/{adminId}
+          method: delete
+          cors: true
+          request:
+            parameters:
+              paths:
+                adminId: true
+
   getReport:
     handler: lambda/report.getReportHandler
     events:

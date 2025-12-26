@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const db = require('../db/db');
 const redisClient = require('../config/redis');
 
-const { insertAdmin, setPaymentStatus, getAdminById } = require('../models/insert.models');
+const { insertAdmin, setPaymentStatus, getAdminById, deleteAdminById } = require('../models/insert.models');
 // Generating the admin ID in format (ADM001, ADM002, ...)
 const generateAdminId = async () => {
     try {
@@ -165,4 +165,33 @@ module.exports.getAdminDetails = async (datas) => {
         return { statusCode: 500, message: 'Internal Server Error' };
     }
 }
+
+// Delete admin by ID
+module.exports.deleteAdmin = async ({ adminId }) => {
+    if (!adminId) {
+        return { statusCode: 400, message: 'adminId is required.' };
+    }
+
+    try {
+        const result = await deleteAdminById({ adminId });
+
+        if (result) {
+            // Remove the admin list cache and specific admin details cache
+            try {
+                await redisClient.del('admins_list');
+                await redisClient.del(`admin_details_${adminId}`);
+                console.log('Cache invalidated for deleted admin:', adminId);
+            } catch (cacheError) {
+                console.error('Error invalidating cache:', cacheError);
+            }
+
+            return { statusCode: 200, message: 'Admin deleted successfully.' };
+        } else {
+            return { statusCode: 404, message: 'Admin not found or could not be deleted.' };
+        }
+    } catch (error) {
+        console.error('Error deleting admin:', error);
+        return { statusCode: 500, message: 'Internal Server Error' };
+    }
+};
         

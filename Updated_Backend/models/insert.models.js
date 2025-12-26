@@ -111,3 +111,33 @@ module.exports.getAdminById = async ({ adminId }) => {
         client.release();
     }
 };
+
+module.exports.deleteAdminById = async ({ adminId }) => {
+    const client = await db.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const deleteQuery = `
+            DELETE FROM admin_accounts
+            WHERE admin_id = $1
+            RETURNING admin_id
+        `;
+
+        const values = [adminId];
+
+        const res = await client.query(deleteQuery, values);
+
+        await client.query('COMMIT');
+
+        return res.rows.length > 0;
+
+    } catch (error) {
+        console.error('Transaction error:', error);
+        await client.query('ROLLBACK');
+        console.error('Error deleting admin:', error);
+        return false;
+    } finally {
+        client.release();
+    }
+};
