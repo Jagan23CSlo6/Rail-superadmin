@@ -47,6 +47,14 @@ functions:
           method: post
           cors: true
 
+  updatePaymentStatus:
+    handler: lambda/insert.updatePaymentStatusHandler
+    events:
+      - http:
+          path: api/super-admin/v1/update-payment-status
+          method: put
+          cors: true
+
   getReport:
     handler: lambda/report.getReportHandler
     events:

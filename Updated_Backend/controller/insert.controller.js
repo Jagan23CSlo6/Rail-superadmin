@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const db = require('../db/db');
 const redisClient = require('../config/redis');
 
-const { insertAdmin } = require('../models/insert.models');
+const { insertAdmin, setPaymentStatus } = require('../models/insert.models');
 // Generating the admin ID in format (ADM001, ADM002, ...)
 const generateAdminId = async () => {
     try {
