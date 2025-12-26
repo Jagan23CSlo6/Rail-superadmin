@@ -1,0 +1,162 @@
+{
+  "/home/black/Documents/AR Projects/Railway Version 1/Super Admin/Rail-superadmin/Updated_Backend/serverless.yml": {
+    "versionFramework": "4.29.0",
+    "servicePath": "/home/black/Documents/AR Projects/Railway Version 1/Super Admin/Rail-superadmin/Updated_Backend/serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "railway-backend",
+      "frameworkVersion": "4",
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs18.x",
+        "stage": "dev",
+        "region": "us-east-1",
+        "environment": {
+          "DB_HOST": "${env:DB_HOST}",
+          "DB_PORT": "${env:DB_PORT}",
+          "DB_USER": "${env:DB_USER}",
+          "DB_PASSWORD": "<REDACTED>",
+          "DB_NAME": "${env:DB_NAME}",
+          "SECURE_CODE": "${env:SECURE_CODE}"
+        }
+      },
+      "functions": {
+        "registerSuperAdmin": {
+          "handler": "lambda/authsignUpHandler",
+          "events": [
+            {
+              "http": {
+                "path": "api/super-admin/v1/auth/signup",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "loginSuperAdmin": {
+          "handler": "lambda/auth.loginHandler",
+          "events": [
+            {
+              "http": {
+                "path": "api/super-admin/v1/auth/login",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "getAdminsList": {
+          "handler": "lambda/lists.getAdminsListHandler",
+          "events": [
+            {
+              "http": {
+                "path": "api/super-admin/v1/admins-list",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "createAdmin": {
+          "handler": "lambda/insert.createAdminHandler",
+          "events": [
+            {
+              "http": {
+                "path": "api/super-admin/v1/create-admin",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "getReport": {
+          "handler": "lambda/report.getReportHandler",
+          "events": [
+            {
+              "http": {
+                "path": "api/super-admin/v1/report-summary",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ]
+        },
+        "getMonthRevenue": {
+          "handler": "lambda/report.getMonthRevenueHandler",
+          "events": [
+            {
+              "http": {
+                "path": "api/super-admin/v1/month-revenue/{month}",
+                "method": "get",
+                "cors": true,
+                "request": {
+                  "parameters": {
+                    "paths": {
+                      "month": true
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "getYearlyRevenueGraph": {
+          "handler": "lambda/report.getYearlyRevenueGraphHandler",
+          "events": [
+            {
+              "http": {
+                "path": "api/super-admin/v1/year-graph/{year}",
+                "method": "get",
+                "cors": true,
+                "request": {
+                  "parameters": {
+                    "paths": {
+                      "year": true
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "plugins": [
+        "serverless-offline"
+      ],
+      "custom": {
+        "serverless-offline": {
+          "useDocker": false,
+          "noPrependStageInUrl": true
+        }
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs18.x",
+      "stage": "dev",
+      "region": "us-east-1",
+      "environment": {
+        "DB_HOST": "${env:DB_HOST}",
+        "DB_PORT": "${env:DB_PORT}",
+        "DB_USER": "${env:DB_USER}",
+        "DB_PASSWORD": "<REDACTED>",
+        "DB_NAME": "${env:DB_NAME}",
+        "SECURE_CODE": "${env:SECURE_CODE}"
+      }
+    },
+    "error": {
+      "message": "Unable to reach the Serverless API (fetch failed; getaddrinfo ENOTFOUND core.serverless.com; code: ENOTFOUND).\nPlease verify your network connection and try again.",
+      "code": "AUTH_FAILED"
+    },
+    "serviceRawFile": "service: railway-backend\nframeworkVersion: \"4\"\n\nprovider:\n  name: aws\n  runtime: nodejs18.x\n  stage: dev\n  region: us-east-1\n  environment:\n    DB_HOST: ${env:DB_HOST}\n    DB_PORT: ${env:DB_PORT}\n    DB_USER: ${env:DB_USER}\n    DB_PASSWORD: ${env:DB_PASSWORD}\n    DB_NAME: ${env:DB_NAME}\n    SECURE_CODE: ${env:SECURE_CODE}\n\nfunctions:\n  registerSuperAdmin:\n    handler: lambda/authsignUpHandler\n    events:\n      - http:\n          path: api/super-admin/v1/auth/signup\n          method: post\n          cors: true\n\n  loginSuperAdmin:\n    handler: lambda/auth.loginHandler\n    events:\n      - http:\n          path: api/super-admin/v1/auth/login\n          method: post\n          cors: true\n\n  getAdminsList:\n    handler: lambda/lists.getAdminsListHandler\n    events:\n      - http:\n          path: api/super-admin/v1/admins-list\n          method: get\n          cors: true\n\n  createAdmin:\n    handler: lambda/insert.createAdminHandler\n    events:\n      - http:\n          path: api/super-admin/v1/create-admin\n          method: post\n          cors: true\n\n  getReport:\n    handler: lambda/report.getReportHandler\n    events:\n      - http:\n          path: api/super-admin/v1/report-summary\n          method: get\n          cors: true\n\n  getMonthRevenue:\n    handler: lambda/report.getMonthRevenueHandler\n    events:\n      - http:\n          path: api/super-admin/v1/month-revenue/{month}\n          method: get\n          cors: true\n          request:\n            parameters:\n              paths:\n                month: true\n\n  getYearlyRevenueGraph:\n    handler: lambda/report.getYearlyRevenueGraphHandler\n    events:\n      - http:\n          path: api/super-admin/v1/year-graph/{year}\n          method: get\n          cors: true\n          request:\n            parameters:\n              paths:\n                year: true\n\nplugins:\n  - serverless-offline\n\ncustom:\n  serverless-offline:\n    useDocker: false\n    noPrependStageInUrl: true\n",
+    "command": [
+      "offline"
+    ],
+    "options": {},
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}

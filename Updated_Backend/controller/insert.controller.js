@@ -77,3 +77,20 @@ module.exports.createAdmin = async (datas) => {
 
   return { statusCode: 200, message: "Created Successfully" };
 };
+
+module.exports.updatePaymentStatus = async (datas) => {
+    const { adminId, isPaid } = datas;
+
+    if (!adminId || typeof isPaid !== 'boolean') {
+        return { statusCode: 400, message: 'adminId and isPaid are required.' };
+    }
+
+    const result = await setPaymentStatus({ adminId, isPaid });
+
+    if(result) {
+        return { statusCode: 200, message: "Payment status updated successfully." };
+    } else {
+        console.error('Failed to update payment status');
+        return { statusCode: 500, message: 'Internal Server Error' };
+    }
+}

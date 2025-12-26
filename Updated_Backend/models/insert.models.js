@@ -53,3 +53,36 @@ module.exports.insertAdmin = async ({ adminId, fullName, email, mobileNumber, pa
     }
 };
 
+module.exports.setPaymentStatus = async ({  adminId, isPaid}) => {
+    const client = await db.connect();
+    
+    try {
+        await client.query('BEGIN');
+
+        const updateQuery = `
+            UPDATE admin_accounts
+            SET payment_status = $1,
+                updated_at = NOW()
+            WHERE admin_id = $2
+        `;
+
+        const values = [
+            isPaid,
+            adminId
+        ];
+
+        await client.query(updateQuery, values);
+
+        await client.query('COMMIT');
+
+        return true;
+
+    } catch (error) {
+        console.error('Transaction error:', error);
+        await client.query('ROLLBACK');
+        console.error('Error updating payment status:', error);
+        return false;
+    } finally {
+        client.release();
+    }
+}

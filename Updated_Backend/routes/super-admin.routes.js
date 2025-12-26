@@ -107,4 +107,18 @@ router.get("/year-graph/:year", async (req, res) => {
     }
 });
 
+router.put("/update-payment-status", async (req, res) => {
+    try {
+        const result = await updatePaymentStatus(req.body);
+
+        return res.status(result.statusCode).json({
+            message: result.message,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "Internal server error",
+        });
+    }
+})
+
 module.exports = router;
