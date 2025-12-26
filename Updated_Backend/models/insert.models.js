@@ -53,7 +53,7 @@ module.exports.insertAdmin = async ({ adminId, fullName, email, mobileNumber, pa
     }
 };
 
-module.exports.setPaymentStatus = async ({  adminId, isPaid}) => {
+module.exports.setPaymentStatus = async ({  adminId, isPaid }) => {
     const client = await db.connect();
     
     try {
