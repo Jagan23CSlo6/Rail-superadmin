@@ -86,3 +86,28 @@ module.exports.setPaymentStatus = async ({  adminId, isPaid}) => {
         client.release();
     }
 }
+
+module.exports.getAdminById = async ({ adminId }) => {
+    const client = await db.connect();
+
+    try {
+        const selectQuery = `
+            SELECT admin_id, full_name, email, mobile_number, 
+                   payment_status, duration, amount
+            FROM admin_accounts
+            WHERE admin_id = $1
+        `;
+
+        const values = [adminId];
+
+        const res = await client.query(selectQuery, values);
+
+        return res.rows[0];
+
+    } catch (error) {
+        console.error('Error fetching admin by ID:', error);
+        throw error;
+    } finally {
+        client.release();
+    }
+};

@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const db = require('../db/db');
 const redisClient = require('../config/redis');
 
-const { insertAdmin, setPaymentStatus } = require('../models/insert.models');
+const { insertAdmin, setPaymentStatus, getAdminById } = require('../models/insert.models');
 // Generating the admin ID in format (ADM001, ADM002, ...)
 const generateAdminId = async () => {
     try {
@@ -78,6 +78,7 @@ module.exports.createAdmin = async (datas) => {
   return { statusCode: 200, message: "Created Successfully" };
 };
 
+// Update payment status of an admin
 module.exports.updatePaymentStatus = async (datas) => {
     const { adminId, isPaid } = datas;
 
@@ -88,9 +89,80 @@ module.exports.updatePaymentStatus = async (datas) => {
     const result = await setPaymentStatus({ adminId, isPaid });
 
     if(result) {
+        // Invalidate cache after successful update
+        try {
+            await redisClient.del('admins_list');
+            await redisClient.del(`admin_details_${adminId}`);
+            console.log('Cache invalidated for admin:', adminId);
+        } catch (cacheError) {
+            console.error('Error invalidating cache:', cacheError);
+        }
+        
         return { statusCode: 200, message: "Payment status updated successfully." };
     } else {
         console.error('Failed to update payment status');
         return { statusCode: 500, message: 'Internal Server Error' };
     }
 }
+
+// Get admin details
+module.exports.getAdminDetails = async (datas) => {
+    const { adminId } = datas;
+
+    if (!adminId) {
+        return { statusCode: 400, message: 'adminId is required.' };
+    }
+
+    const cacheKey = `admin_details_${adminId}`;
+    
+    try {
+        // Try to get cached data
+        const cachedData = await redisClient.get(cacheKey);
+        
+        if (cachedData) {
+            return {
+                statusCode: 200,
+                message: "Admin details fetched successfully (cached)",
+                data: JSON.parse(cachedData)
+            };
+        }
+    } catch (redisError) {
+        console.error('Redis get error:', redisError);
+    }
+
+    try {
+        const adminDetails = await getAdminById({ adminId });
+
+        if (!adminDetails) {
+            return { statusCode: 404, message: 'Admin not found.' };
+        }
+
+        // Format the response data
+        const formattedData = {
+            id: adminDetails.admin_id,
+            name: adminDetails.full_name,
+            email: adminDetails.email,
+            phoneNo: adminDetails.mobile_number,
+            paymentStatus: adminDetails.payment_status ? "paid" : "pending",
+            duration: adminDetails.duration,
+            amount: adminDetails.amount
+        };
+
+        // Cache the result for 1 day (86400 seconds)
+        try {
+            await redisClient.setEx(cacheKey, 86400, JSON.stringify(formattedData));
+        } catch (redisError) {
+            console.error('Redis set error:', redisError);
+        }
+
+        return { 
+            statusCode: 200, 
+            message: 'Admin details fetched successfully.',
+            data: formattedData
+        };
+    } catch (error) {
+        console.error('Error fetching admin details:', error);
+        return { statusCode: 500, message: 'Internal Server Error' };
+    }
+}
+        

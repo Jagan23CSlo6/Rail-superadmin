@@ -89,6 +89,7 @@ router.get("/month-revenue/:month", async (req, res) => {
     }
 });
 
+// Yearly revenue graph
 router.get("/year-graph/:year", async (req, res) => {
     const year = req.params.year;
 
@@ -107,6 +108,7 @@ router.get("/year-graph/:year", async (req, res) => {
     }
 });
 
+//  Update payment status of an admin
 router.put("/update-payment-status", async (req, res) => {
     try {
         const result = await updatePaymentStatus(req.body);
@@ -120,5 +122,23 @@ router.put("/update-payment-status", async (req, res) => {
         });
     }
 })
+
+// Get admin details
+router.get("/admin-details/:adminId", async (req, res) => {
+    try {
+        const datas = { adminId: req.params.adminId };
+        const result = await getAdminDetails(datas);
+
+        return res.status(result.statusCode).json({
+            message: result.message,
+            data: result.data ?? {}
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "Internal server error",
+            data: {}
+        });
+    }
+});
 
 module.exports = router;

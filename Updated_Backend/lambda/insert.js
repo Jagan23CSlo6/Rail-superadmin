@@ -1,4 +1,4 @@
-const { createAdmin, updatePaymentStatus } = require('../controller/insert.controller');
+const { createAdmin, updatePaymentStatus, getAdminDetails } = require('../controller/insert.controller');
 const { verifyTokenFromEvent } = require('./middleware/verifyToken');
 
 // Handler for creating new admin
@@ -69,6 +69,43 @@ module.exports.updatePaymentStatusHandler = async (event) => {
         body: JSON.stringify({ 
             statusCode: result.statusCode,
             message: result.message
+        }),
+    };
+};
+
+// Handler for getting admin details by ID
+module.exports.getAdminDetailsHandler = async (event) => {
+    const tokenVerification = verifyTokenFromEvent(event);
+
+    // if (!tokenVerification.valid) {
+    //     return {
+    //         statusCode: 401,
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //             'Access-Control-Allow-Origin': '*',
+    //             'Access-Control-Allow-Credentials': true,
+    //         },
+    //         body: JSON.stringify({
+    //             statusCode: 401,
+    //             message: tokenVerification.message
+    //         }),
+    //     };
+    // }
+
+    const adminId = event.pathParameters?.adminId;
+    const result = await getAdminDetails({ adminId });
+    
+    return {
+        statusCode: result.statusCode,
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': true,
+        },
+        body: JSON.stringify({ 
+            statusCode: result.statusCode,
+            message: result.message,
+            data: result.data || null
         }),
     };
 };
