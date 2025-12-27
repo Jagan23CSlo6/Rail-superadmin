@@ -1,24 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar";
-import "./AddAdmin.css";
+import { adminAPI } from "../api/index";
+import { markAdminsListAsChanged } from "../utils/auth";
 
 const AddAdmin = () => {
   const navigate = useNavigate();
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
   const [formData, setFormData] = useState({
     adminName: "",
     phoneNumber: "",
-    location: "",
-    date: "",
-    loginId: "",
+    email: "",
     password: "",
     duration: "",
     amount: "",
-    bookingType: [] as string[],
+    paymentStatus: "Pending",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -28,80 +27,103 @@ const AddAdmin = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
-  const handleBookingTypeChange = (value: string) => {
-    setFormData((prev) => {
-      const currentTypes = prev.bookingType;
-      if (currentTypes.includes(value)) {
-        return {
-          ...prev,
-          bookingType: currentTypes.filter((type) => type !== value),
-        };
-      } else {
-        return {
-          ...prev,
-          bookingType: [...currentTypes, value],
-        };
-      }
-    });
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Admin Name validation
+    if (!formData.adminName.trim()) {
+      errors.adminName = "Admin name is required";
+    } else if (formData.adminName.trim().length < 3) {
+      errors.adminName = "Admin name must be at least 3 characters";
+    }
+
+    // Phone Number validation
+    if (!formData.phoneNumber.trim()) {
+      errors.phoneNumber = "Phone number is required";
+    } else if (!/^\d{10}$/.test(formData.phoneNumber.trim())) {
+      errors.phoneNumber = "Phone number must be 10 digits";
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      errors.email = "Invalid email format";
+    }
+
+    // Password validation
+    if (!formData.password.trim()) {
+      errors.password = "Password is required";
+    } else if (formData.password.trim().length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+
+    // Duration validation
+    if (!formData.duration.trim()) {
+      errors.duration = "Duration is required";
+    } else if (isNaN(Number(formData.duration)) || Number(formData.duration) <= 0) {
+      errors.duration = "Duration must be a positive number";
+    }
+
+    // Amount validation
+    if (!formData.amount.trim()) {
+      errors.amount = "Amount is required";
+    } else if (isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
+      errors.amount = "Amount must be a positive number";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Validate booking type selection
-    if (formData.bookingType.length === 0) {
-      setError("Please select at least one booking type");
-      alert("Please select at least one booking type");
+    // Validate form data
+    if (!validateForm()) {
+      setError("Please fix the validation errors before submitting");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Get super_admin_id from sessionStorage
-      const superAdminId = sessionStorage.getItem("super_admin_id") || "1";
-
-      // Initialize booking pricing with default values for selected types
-      const bookingPricing = formData.bookingType.map((type) => ({
-        type,
-        graceTime: "0",
-        priceTiers: [{ hours: "", price: "0" }],
-      }));
-
       const payload = {
-        super_admin_id: parseInt(superAdminId),
-        admin_name: formData.adminName,
-        phone_number: formData.phoneNumber,
-        location: formData.location,
-        join_date: formData.date,
-        login_id: formData.loginId,
-        password: formData.password,
-        duration: formData.duration ? parseInt(formData.duration) : undefined,
-        amount: formData.amount ? parseFloat(formData.amount) : undefined,
-        booking_type: formData.bookingType.join(","),
-        booking_pricing: JSON.stringify(bookingPricing),
+        fullName: formData.adminName.trim(),
+        email: formData.email.trim(),
+        mobileNumber: formData.phoneNumber.trim(),
+        password: formData.password.trim(),
+        paymentStatus: formData.paymentStatus,
+        duration: parseInt(formData.duration),
+        amount: parseFloat(formData.amount),
       };
 
-      const response = await fetch(`${apiBaseUrl}/api/admin/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      console.log("Submitting admin data:", payload);
 
-      const result = await response.json();
+      const response = await adminAPI.createAdmin(payload);
 
-      if (!response.ok) {
-        throw new Error(result.message || "Failed to create admin");
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        console.log("Admin created successfully:", response);
+        
+        // Mark admin list as changed to force refresh
+        markAdminsListAsChanged();
+        
+        alert("Admin created successfully!");
+        navigate("/admin-list");
+      } else {
+        throw new Error(response.message || "Failed to create admin");
       }
-
-      console.log("Admin created successfully:", result);
-      alert("Admin created successfully!");
-      navigate("/admin-list");
     } catch (err: any) {
       console.error("Error creating admin:", err);
       setError(err.message || "Failed to create admin. Please try again.");
@@ -116,171 +138,205 @@ const AddAdmin = () => {
   };
 
   return (
-    <div className="add-admin-container">
+    <div className="min-h-screen bg-gray-50">
       <Navbar activePage="add-login" />
 
-      <div className="content">
-        <div className="form-header">
-          <h2>New Admin</h2>
-          <p>Fill the details to add the Admin</p>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-800">New Admin</h2>
+          <p className="text-gray-600 mt-2">Fill the details to add a new admin</p>
         </div>
 
-        <div className="form-card">
-          {error && <div className="error-banner">{error}</div>}
-          <form onSubmit={handleSubmit}>
-            <div className="form-grid">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 px-6 py-4">
+              <div className="flex items-center">
+                <svg className="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-red-800 font-medium">{error}</p>
+              </div>
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit} className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="form-group">
-                <label htmlFor="adminName">Admin Name</label>
+                <label htmlFor="adminName" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Admin Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   id="adminName"
                   name="adminName"
-                  placeholder="Name"
+                  placeholder="Enter admin name"
                   value={formData.adminName}
                   onChange={handleChange}
-                  required
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-gray-400 outline-none transition-all ${
+                    validationErrors.adminName 
+                      ? "border-red-500 focus:border-red-500" 
+                      : "border-gray-300 focus:border-gray-400"
+                  }`}
                 />
+                {validationErrors.adminName && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.adminName}</p>
+                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="phoneNumber">Phone Number</label>
+                <label htmlFor="phoneNumber" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="tel"
                   id="phoneNumber"
                   name="phoneNumber"
-                  placeholder="Mobile number"
+                  placeholder="10-digit mobile number"
                   value={formData.phoneNumber}
                   onChange={handleChange}
-                  required
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-gray-400 outline-none transition-all ${
+                    validationErrors.phoneNumber 
+                      ? "border-red-500 focus:border-red-500" 
+                      : "border-gray-300 focus:border-gray-400"
+                  }`}
                 />
+                {validationErrors.phoneNumber && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.phoneNumber}</p>
+                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="location">Location</label>
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="text"
-                  id="location"
-                  name="location"
-                  placeholder="Location of Station"
-                  value={formData.location}
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="admin@example.com"
+                  value={formData.email}
                   onChange={handleChange}
-                  required
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-gray-400 outline-none transition-all ${
+                    validationErrors.email 
+                      ? "border-red-500 focus:border-red-500" 
+                      : "border-gray-300 focus:border-gray-400"
+                  }`}
                 />
+                {validationErrors.email && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="date">Date</label>
+                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Password <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="date"
-                  id="date"
-                  name="date"
-                  placeholder="Enter Date"
-                  value={formData.date}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="loginId">Login Id</label>
-                <input
-                  type="text"
-                  id="loginId"
-                  name="loginId"
-                  placeholder="Login Id"
-                  value={formData.loginId}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <input
-                  type="text"
+                  type="password"
                   id="password"
                   name="password"
-                  placeholder="00"
+                  placeholder="Minimum 6 characters"
                   value={formData.password}
                   onChange={handleChange}
-                  required
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-gray-400 outline-none transition-all ${
+                    validationErrors.password 
+                      ? "border-red-500 focus:border-red-500" 
+                      : "border-gray-300 focus:border-gray-400"
+                  }`}
                 />
+                {validationErrors.password && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.password}</p>
+                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="duration">Duration</label>
+                <label htmlFor="duration" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Duration (months) <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="text"
+                  type="number"
                   id="duration"
                   name="duration"
-                  placeholder="Duration in month"
+                  placeholder="Enter duration in months"
                   value={formData.duration}
                   onChange={handleChange}
-                  required
+                  min="1"
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-gray-400 outline-none transition-all ${
+                    validationErrors.duration 
+                      ? "border-red-500 focus:border-red-500" 
+                      : "border-gray-300 focus:border-gray-400"
+                  }`}
                 />
+                {validationErrors.duration && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.duration}</p>
+                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="amount">Amount</label>
+                <label htmlFor="amount" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Amount (₹) <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="text"
+                  type="number"
                   id="amount"
                   name="amount"
-                  placeholder="Enter Amount"
+                  placeholder="Enter amount"
                   value={formData.amount}
                   onChange={handleChange}
-                  required
+                  min="0"
+                  step="0.01"
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-gray-400 outline-none transition-all ${
+                    validationErrors.amount 
+                      ? "border-red-500 focus:border-red-500" 
+                      : "border-gray-300 focus:border-gray-400"
+                  }`}
                 />
+                {validationErrors.amount && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.amount}</p>
+                )}
               </div>
 
-              <div
-                className="form-group booking-type-group"
-                style={{ gridColumn: "1 / -1" }}
-              >
-                <label>Booking Type</label>
-                <div className="checkbox-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.bookingType.includes("sitting")}
-                      onChange={() => handleBookingTypeChange("sitting")}
-                    />
-                    <span>Sitting</span>
-                  </label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.bookingType.includes("sleeping")}
-                      onChange={() => handleBookingTypeChange("sleeping")}
-                    />
-                    <span>Sleeping</span>
-                  </label>
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.bookingType.includes("luggage")}
-                      onChange={() => handleBookingTypeChange("luggage")}
-                    />
-                    <span>Luggage</span>
-                  </label>
-                </div>
-                {formData.bookingType.length > 0 && (
-                  <p className="selected-types">
-                    Selected: {formData.bookingType.join(", ")}
-                  </p>
-                )}
+              <div className="form-group">
+                <label htmlFor="paymentStatus" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Payment Status <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="paymentStatus"
+                  name="paymentStatus"
+                  value={formData.paymentStatus}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-gray-400 outline-none transition-all"
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Over Due">Over Due</option>
+                </select>
               </div>
             </div>
 
-            <div className="form-actions">
-              <button type="submit" className="save-btn" disabled={loading}>
-                {loading ? "Saving..." : "Save"}
+            <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-gray-200">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 px-6 rounded-lg hover:from-green-600 hover:to-green-700 focus:ring-4 focus:ring-green-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating Admin...
+                  </span>
+                ) : (
+                  "Create Admin"
+                )}
               </button>
               <button
                 type="button"
-                className="cancel-btn"
                 onClick={handleCancel}
                 disabled={loading}
+                className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 px-6 rounded-lg hover:bg-gray-300 focus:ring-4 focus:ring-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>

@@ -18,7 +18,7 @@ interface Admin {
   phoneNo: string;
   since: string;
   nextPayment: string;
-  paymentStatus: "Completed" | "Over Due" | "Pending";
+  paymentStatus: "Paid" | "Unpaid";
 }
 
 const AdminList = () => {
@@ -43,8 +43,22 @@ const AdminList = () => {
         const currentTime = new Date().getTime();
         const cacheExpiry = 5 * 60 * 1000; // 5 minutes cache expiry
         
-        // Use cached data if it exists, hasn't expired, and data wasn't modified
+        // Validate cached data has correct format
+        let isValidCache = false;
         if (cachedData && cacheTimestamp && !dataModified) {
+          try {
+            const items: Admin[] = JSON.parse(cachedData);
+            // Check if all items have Paid/Unpaid status (not old COMPLETED/PENDING format)
+            isValidCache = items.every(item => 
+              item.paymentStatus === "Paid" || item.paymentStatus === "Unpaid"
+            );
+          } catch {
+            isValidCache = false;
+          }
+        }
+        
+        // Use cached data if it exists, hasn't expired, data wasn't modified, and is valid
+        if (cachedData && cacheTimestamp && !dataModified && isValidCache) {
           const timeDiff = currentTime - parseInt(cacheTimestamp);
           if (timeDiff < cacheExpiry) {
             console.log("Using cached admin data");
@@ -74,11 +88,9 @@ const AdminList = () => {
               admin?.paymentStatus ?? ""
             ).toLowerCase();
             const paymentStatus =
-              normalizeStatus === "completed"
-                ? "Completed"
-                : normalizeStatus === "pending"
-                ? "Pending"
-                : "Over Due";
+              normalizeStatus === "paid" || normalizeStatus === "completed"
+                ? "Paid"
+                : "Unpaid";
 
             return {
               id: admin?.id || 0,
@@ -138,7 +150,7 @@ const AdminList = () => {
       // Refresh the admin list after successful payment
       const updatedAdmins = admins.map((admin) =>
         admin.id === adminId
-          ? { ...admin, paymentStatus: "Completed" as const }
+          ? { ...admin, paymentStatus: "Paid" as const }
           : admin
       );
       setAdmins(updatedAdmins);
@@ -180,6 +192,54 @@ const AdminList = () => {
     }
   };
 
+  // Function to handle row click and fetch admin details
+  const handleRowClick = async (adminId: string | number) => {
+    try {
+      console.log("Fetching details for admin ID:", adminId);
+      
+      // Check if admin list was modified - if so, ignore details cache
+      const dataModified = sessionStorage.getItem("adminsListChanged") === "true";
+      
+      // Check if details are cached
+      const cachedDetails = sessionStorage.getItem(`adminDetails_${adminId}`);
+      const cacheTimestamp = sessionStorage.getItem(`adminDetailsTimestamp_${adminId}`);
+      const currentTime = new Date().getTime();
+      const cacheExpiry = 5 * 60 * 1000; // 5 minutes
+      
+      // Use cache only if available, not expired, AND admin list wasn't modified
+      if (cachedDetails && cacheTimestamp && !dataModified) {
+        const timeDiff = currentTime - parseInt(cacheTimestamp);
+        if (timeDiff < cacheExpiry) {
+          console.log("Using cached admin details:", JSON.parse(cachedDetails));
+          navigate(`/admin-details/${adminId}`);
+          return;
+        }
+      }
+      
+      // Fetch fresh data from API (if cache expired or list was modified)
+      if (dataModified) {
+        console.log("Admin list was modified - clearing details cache and fetching fresh data");
+      } else {
+        console.log("Fetching fresh admin details from API...");
+      }
+      const response = await adminAPI.getAdminDetails(adminId.toString());
+      console.log("Admin details response:", response);
+      
+      // Store in sessionStorage
+      if (response.statusCode === 200 && response.data) {
+        sessionStorage.setItem(`adminDetails_${adminId}`, JSON.stringify(response.data));
+        sessionStorage.setItem(`adminDetailsTimestamp_${adminId}`, currentTime.toString());
+        console.log("Admin details cached successfully");
+      }
+      
+      // Navigate to details page
+      navigate(`/admin-details/${adminId}`);
+    } catch (error) {
+      console.error("Error fetching admin details:", error);
+      alert("Failed to load admin details. Please try again.");
+    }
+  };
+
   // Function to manually refresh data
   const refreshData = async () => {
     // Clear cache and set modified flag to force refresh
@@ -198,11 +258,9 @@ const AdminList = () => {
             admin?.paymentStatus ?? ""
           ).toLowerCase();
           const paymentStatus =
-            normalizeStatus === "completed"
-              ? "Completed"
-              : normalizeStatus === "pending"
-              ? "Pending"
-              : "Over Due";
+            normalizeStatus === "paid" || normalizeStatus === "completed"
+              ? "Paid"
+              : "Unpaid";
 
           return {
             id: admin?.id || 0,
@@ -326,20 +384,17 @@ const AdminList = () => {
                       <FaClipboardList className="text-gray-200" /> Next Payment
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider border-r border-gray-500">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
                     <div className="flex items-center gap-2">
                       <IoFlash className="text-yellow-300" /> Status
                     </div>
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">
-                    Action
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white">
                 {filteredAdmins.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center text-gray-400">
                         <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -353,7 +408,7 @@ const AdminList = () => {
                   filteredAdmins.map((admin, index) => (
                     <tr
                       key={admin.id}
-                      onClick={() => navigate(`/admin-details/${admin.id}`)}
+                      onClick={() => handleRowClick(admin.id)}
                       className="border-b border-gray-200 hover:bg-blue-50 cursor-pointer transition-all duration-200 group"
                     >
                       <td className="px-6 py-5 text-sm font-semibold text-gray-700 border-r border-gray-200">
@@ -374,34 +429,16 @@ const AdminList = () => {
                       <td className={`px-6 py-5 text-sm border-r border-gray-200 font-medium ${isPastDate(admin.nextPayment) ? "text-red-600 font-bold" : "text-gray-700"}`}>
                         {admin.nextPayment}
                       </td>
-                      <td className="px-6 py-5 text-sm border-r border-gray-200">
+                      <td className="px-6 py-5 text-sm">
                         <span
                           className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm ${
-                            admin.paymentStatus === "Completed"
+                            admin.paymentStatus === "Paid"
                               ? "bg-green-500 text-white"
-                              : admin.paymentStatus === "Pending"
-                              ? "bg-yellow-400 text-gray-900"
                               : "bg-red-500 text-white"
                           }`}
                         >
                           {admin.paymentStatus}
                         </span>
-                      </td>
-                      <td className="px-6 py-5 text-sm text-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePayment(admin.id);
-                          }}
-                          disabled={admin.paymentStatus === "Completed"}
-                          className={`px-6 py-2.5 rounded-lg font-bold text-sm uppercase tracking-wide transition-all duration-200 shadow-md ${
-                            admin.paymentStatus === "Completed"
-                              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                              : "bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 hover:shadow-lg transform hover:-translate-y-0.5"
-                          }`}
-                        >
-                          {admin.paymentStatus === "Completed" ? "Paid" : "Mark Paid"}
-                        </button>
                       </td>
                     </tr>
                   ))

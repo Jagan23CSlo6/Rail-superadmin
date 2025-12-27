@@ -151,7 +151,7 @@ module.exports.getAdminDetails = async (datas) => {
             name: adminDetails.full_name,
             email: adminDetails.email,
             phoneNo: adminDetails.mobile_number,
-            paymentStatus: adminDetails.payment_status ? "paid" : "pending",
+            paymentStatus: adminDetails.payment_status,
             duration: adminDetails.duration,
             amount: adminDetails.amount
         };

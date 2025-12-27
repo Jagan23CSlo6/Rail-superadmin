@@ -100,7 +100,7 @@ export const adminAPI = {
 
   // Update payment status
   updatePaymentStatus: async (adminId: string, isPaid: boolean) => {
-    const response = await fetch(`${API_BASE_URL}/update-payment`, {
+    const response = await fetch(`${API_BASE_URL}/update-payment-status`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify({ adminId, isPaid }),

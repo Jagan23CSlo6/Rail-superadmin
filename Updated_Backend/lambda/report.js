@@ -6,20 +6,20 @@ module.exports.getReportHandler = async (event) => {
     // Verify token
     const tokenVerification = verifyTokenFromEvent(event);
 
-    // if (!tokenVerification.valid) {
-    //     return {
-    //         statusCode: 401,
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //             'Access-Control-Allow-Origin': '*',
-    //             'Access-Control-Allow-Credentials': true,
-    //         },
-    //         body: JSON.stringify({
-    //             statusCode: 401,
-    //             message: tokenVerification.message
-    //         }),
-    //     };
-    // }
+    if (!tokenVerification.valid) {
+        return {
+            statusCode: 401,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Credentials': true,
+            },
+            body: JSON.stringify({
+                statusCode: 401,
+                message: tokenVerification.message
+            }),
+        };
+    }
 
     try {
         const result = await getReport();
@@ -61,20 +61,20 @@ module.exports.getMonthRevenueHandler = async (event) => {
     // Verify token
     const tokenVerification = verifyTokenFromEvent(event);
 
-    // if (!tokenVerification.valid) {
-    //     return {
-    //         statusCode: 401,
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //             'Access-Control-Allow-Origin': '*',
-    //             'Access-Control-Allow-Credentials': true,
-    //         },
-    //         body: JSON.stringify({
-    //             statusCode: 401,
-    //             message: tokenVerification.message
-    //         }),
-    //     };
-    // }
+    if (!tokenVerification.valid) {
+        return {
+            statusCode: 401,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Credentials': true,
+            },
+            body: JSON.stringify({
+                statusCode: 401,
+                message: tokenVerification.message
+            }),
+        };
+    }
 
     try {
         // Extract month from query parameters or path parameters
@@ -119,20 +119,20 @@ module.exports.getYearlyRevenueGraphHandler = async (event) => {
     // Verify token
     const tokenVerification = verifyTokenFromEvent(event);
 
-    // if (!tokenVerification.valid) {
-    //     return {
-    //         statusCode: 401,
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //             'Access-Control-Allow-Origin': '*',
-    //             'Access-Control-Allow-Credentials': true,
-    //         },
-    //         body: JSON.stringify({
-    //             statusCode: 401,
-    //             message: tokenVerification.message
-    //         }),
-    //     };
-    // }
+    if (!tokenVerification.valid) {
+        return {
+            statusCode: 401,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Credentials': true,
+            },
+            body: JSON.stringify({
+                statusCode: 401,
+                message: tokenVerification.message
+            }),
+        };
+    }
 
     try {
         // Extract year from query parameters or path parameters
