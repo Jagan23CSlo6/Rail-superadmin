@@ -48,6 +48,9 @@ export const getUserData = () => {
 
 // Cache management utility functions
 export const markAdminsListAsChanged = () => {
+  // Clear the cache immediately to force fresh data fetch
+  sessionStorage.removeItem('adminsList');
+  sessionStorage.removeItem('adminsListTimestamp');
   sessionStorage.setItem('adminsListChanged', 'true');
 };
 

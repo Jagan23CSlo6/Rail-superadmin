@@ -27,6 +27,24 @@ const AdminList = () => {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Listen for visibility changes to refresh data when coming back to this page
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Check if data was modified while away
+        const dataModified = sessionStorage.getItem("adminsListChanged") === "true";
+        if (dataModified) {
+          console.log("Page became visible and data was modified - triggering refresh");
+          setRefreshTrigger(prev => prev + 1);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   useEffect(() => {
     const fetchAdmins = async () => {
@@ -87,8 +105,9 @@ const AdminList = () => {
             const normalizeStatus = String(
               admin?.paymentStatus ?? ""
             ).toLowerCase();
+            // Handle both boolean strings (true/false) and status strings (paid/completed/unpaid)
             const paymentStatus =
-              normalizeStatus === "paid" || normalizeStatus === "completed"
+              normalizeStatus === "true" || normalizeStatus === "paid" || normalizeStatus === "completed"
                 ? "Paid"
                 : "Unpaid";
 
@@ -121,7 +140,7 @@ const AdminList = () => {
     };
 
     fetchAdmins();
-  }, []);
+  }, [refreshTrigger]);
 
   const filteredAdmins = admins.filter(
     (admin) =>
@@ -257,8 +276,9 @@ const AdminList = () => {
           const normalizeStatus = String(
             admin?.paymentStatus ?? ""
           ).toLowerCase();
+          // Handle both boolean strings (true/false) and status strings (paid/completed/unpaid)
           const paymentStatus =
-            normalizeStatus === "paid" || normalizeStatus === "completed"
+            normalizeStatus === "true" || normalizeStatus === "paid" || normalizeStatus === "completed"
               ? "Paid"
               : "Unpaid";
 

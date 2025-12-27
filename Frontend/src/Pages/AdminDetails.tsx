@@ -58,8 +58,8 @@ const AdminDetails = () => {
             const cachedData = JSON.parse(cachedDetails);
             setAdmin(cachedData);
             // Set initial isPaid state based on cached payment status
-            const isPaidStatus = (cachedData.paymentStatus || "").toLowerCase() === "paid" || 
-                                 (cachedData.paymentStatus || "").toLowerCase() === "completed";
+            const statusStr = String(cachedData.paymentStatus || "").toLowerCase();
+            const isPaidStatus = statusStr === "true" || statusStr === "paid" || statusStr === "completed";
             setIsPaid(isPaidStatus);
             setHasChanges(false);
             setLoading(false);
@@ -85,9 +85,10 @@ const AdminDetails = () => {
 
           setAdmin(adminData);
           // Set initial isPaid state based on current payment status
-          const isPaidStatus = (response.data.paymentStatus || "").toLowerCase() === "paid" || 
-                               (response.data.paymentStatus || "").toLowerCase() === "completed";
+          const statusStr = String(response.data.paymentStatus || "").toLowerCase();
+          const isPaidStatus = statusStr === "true" || statusStr === "paid" || statusStr === "completed";
           setIsPaid(isPaidStatus);
+          setHasChanges(false);
           setHasChanges(false);
           
           // Cache the data
@@ -184,8 +185,8 @@ const AdminDetails = () => {
 
   // Determine payment status display
   const getPaymentStatusDisplay = (status: string) => {
-    const statusLower = status.toLowerCase();
-    if (statusLower === "paid" || statusLower === "completed") {
+    const statusLower = String(status || "").toLowerCase();
+    if (statusLower === "true" || statusLower === "paid" || statusLower === "completed") {
       return { text: "Paid", color: "bg-green-500 text-white" };
     } else {
       return { text: "Unpaid", color: "bg-yellow-500 text-white" };
