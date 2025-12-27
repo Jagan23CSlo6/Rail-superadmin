@@ -1,25 +1,26 @@
-const redis = require('redis');
+const redis = require("redis");
 
-let redisClient;
+let redisClient; // global, reused across Lambda invocations
 
-if (!redisClient) {
-  redisClient = redis.createClient({
-    url: process.env.REDIS_URL
-  });
+async function getRedisClient() {
+  if (!redisClient || !redisClient.isOpen) {
+    redisClient = redis.createClient({
+      socket: {
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT,
+        connectTimeout: 10000
+      },
+      password: process.env.REDIS_PASSWORD
+    });
 
-  redisClient.on('error', (err) => {
-    console.error('Redis Client Error:', err);
-  });
-}
+    redisClient.on("connect", () => console.log("✅ Redis TCP connected"));
+    redisClient.on("ready", () => console.log("✅ Redis ready for commands"));
+    redisClient.on("error", (err) => console.error("❌ Redis Client Error:", err.message));
 
-// 🔑 Connect only if not already connected
-async function connectRedis() {
-  if (!redisClient.isOpen) {
     await redisClient.connect();
-    console.log('Connected to Redis');
   }
+
+  return redisClient;
 }
 
-connectRedis();
-
-module.exports = redisClient;
+module.exports = { getRedisClient };

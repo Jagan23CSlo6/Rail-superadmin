@@ -1,5 +1,5 @@
 const { adminsList } = require("../models/lists.model");
-const redisClient = require("../config/redis");
+const { getRedisClient } = require("../config/redis");
 
 // Helper function to format date as dd/mm/yyyy
 const formatDate = (date) => {
@@ -23,8 +23,10 @@ const calculateNextPayment = (createdAt, duration) => {
 
 module.exports.getAdminsList = async () => {
     const cacheKey = 'admins_list';
+    let redisClient;
     
     try {
+        redisClient = await getRedisClient();
         const cachedData = await redisClient.get(cacheKey);
         
         if (cachedData) {
@@ -59,7 +61,9 @@ module.exports.getAdminsList = async () => {
 
     // Cached for the 1 days
     try {
-        await redisClient.setEx(cacheKey, 86400, JSON.stringify(formattedData));
+        if (redisClient) {
+            await redisClient.setEx(cacheKey, 86400, JSON.stringify(formattedData));
+        }
     } catch (redisError) {
         console.error('Redis set error:', redisError);
     }

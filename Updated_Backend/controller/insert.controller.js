@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const db = require('../db/db');
-const redisClient = require('../config/redis');
+const { getRedisClient } = require('../config/redis');
 
 const { insertAdmin, setPaymentStatus, getAdminById, deleteAdminById } = require('../models/insert.models');
 // Generating the admin ID in format (ADM001, ADM002, ...)
@@ -68,7 +68,10 @@ module.exports.createAdmin = async (datas) => {
 
   // Delete admins list cache after successful insertion
   try {
-    await redisClient.del('admins_list');
+    const redisClient = await getRedisClient();
+    if (redisClient) {
+      await redisClient.del('admins_list');
+    }
     console.log('Admins list cache invalidated');
   } catch (cacheError) {
     console.error('Error invalidating cache:', cacheError);
@@ -91,8 +94,11 @@ module.exports.updatePaymentStatus = async (datas) => {
     if(result) {
         // Invalidate cache after successful update
         try {
-            await redisClient.del('admins_list');
-            await redisClient.del(`admin_details_${adminId}`);
+            const redisClient = await getRedisClient();
+            if (redisClient) {
+                await redisClient.del('admins_list');
+                await redisClient.del(`admin_details_${adminId}`);
+            }
             console.log('Cache invalidated for admin:', adminId);
         } catch (cacheError) {
             console.error('Error invalidating cache:', cacheError);
@@ -114,9 +120,11 @@ module.exports.getAdminDetails = async (datas) => {
     }
 
     const cacheKey = `admin_details_${adminId}`;
+    let redisClient;
     
     try {
         // Try to get cached data
+        redisClient = await getRedisClient();
         const cachedData = await redisClient.get(cacheKey);
         
         if (cachedData) {
@@ -150,7 +158,9 @@ module.exports.getAdminDetails = async (datas) => {
 
         // Cache the result for 1 day (86400 seconds)
         try {
-            await redisClient.setEx(cacheKey, 86400, JSON.stringify(formattedData));
+            if (redisClient) {
+                await redisClient.setEx(cacheKey, 86400, JSON.stringify(formattedData));
+            }
         } catch (redisError) {
             console.error('Redis set error:', redisError);
         }
@@ -178,8 +188,11 @@ module.exports.deleteAdmin = async ({ adminId }) => {
         if (result) {
             // Remove the admin list cache and specific admin details cache
             try {
-                await redisClient.del('admins_list');
-                await redisClient.del(`admin_details_${adminId}`);
+                const redisClient = await getRedisClient();
+                if (redisClient) {
+                    await redisClient.del('admins_list');
+                    await redisClient.del(`admin_details_${adminId}`);
+                }
                 console.log('Cache invalidated for deleted admin:', adminId);
             } catch (cacheError) {
                 console.error('Error invalidating cache:', cacheError);

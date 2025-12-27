@@ -1,10 +1,12 @@
 const { sendReport, sendMonthRevenue, sendYearlyRevenueGraph } = require("../models/report.model");
-const redisClient = require("../config/redis");
+const { getRedisClient } = require("../config/redis");
 
 module.exports.getReport = async () => {
     const cacheKey = 'report_data';
+    let redisClient;
     
     try {
+        redisClient = await getRedisClient();
         const cachedData = await redisClient.get(cacheKey);
         
         if (cachedData) {
@@ -29,7 +31,9 @@ module.exports.getReport = async () => {
 
     // Cached for the 1 days
     try {
-        await redisClient.setEx(cacheKey, 86400, JSON.stringify(result.data));
+        if (redisClient) {
+            await redisClient.setEx(cacheKey, 86400, JSON.stringify(result.data));
+        }
     } catch (redisError) {
         console.error('Redis set error:', redisError);
     }
@@ -69,6 +73,7 @@ module.exports.getMonthRevenue = async (month) => {
     const cacheKey = `month_revenue_${monthNumber}`;
     
     try {
+        const redisClient = await getRedisClient();
         const cachedData = await redisClient.get(cacheKey);
         
         if (cachedData) {
@@ -132,8 +137,10 @@ module.exports.getYearlyRevenueGraph = async (year) => {
     }
 
     const cacheKey = `yearly_revenue_graph_${yearNumber}`;
+    let redisClient;
     
     try {
+        redisClient = await getRedisClient();
         const cachedData = await redisClient.get(cacheKey);
         
         if (cachedData) {
@@ -158,7 +165,9 @@ module.exports.getYearlyRevenueGraph = async (year) => {
 
     // Cached for 1 day
     try {
-        await redisClient.setEx(cacheKey, 86400, JSON.stringify(result.data));
+        if (redisClient) {
+            await redisClient.setEx(cacheKey, 86400, JSON.stringify(result.data));
+        }
     } catch (redisError) {
         console.error('Redis set error:', redisError);
     }
