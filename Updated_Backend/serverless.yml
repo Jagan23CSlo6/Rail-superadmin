@@ -31,6 +31,14 @@ functions:
           method: post
           cors: true
 
+  verifyToken:
+    handler: lambda/auth.verifyTokenHandler
+    events:
+      - http:
+          path: api/super-admin/v1/auth/verify
+          method: get
+          cors: true
+
   getAdminsList:
     handler: lambda/lists.getAdminsListHandler
     events:

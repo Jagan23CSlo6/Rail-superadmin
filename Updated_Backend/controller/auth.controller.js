@@ -78,3 +78,24 @@ module.exports.loginSuperAdmin = async (datas) => {
         token: token
     };
 }
+
+module.exports.verifyTokenAndGetUser = async (token) => {
+    try {
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        return {
+            statusCode: 200,
+            message: "Token is valid",
+            data: {
+                username: decoded.username,
+                name: decoded.name
+            }
+        };
+    } catch (error) {
+        return {
+            statusCode: 401,
+            message: "Invalid or expired token"
+        };
+    }
+}

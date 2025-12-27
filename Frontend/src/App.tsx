@@ -10,7 +10,6 @@ import AdminList from "./Pages/AdminList";
 import AddAdmin from "./Pages/AddAdmin";
 import AdminDetails from "./Pages/AdminDetails";
 import ProtectedRoute from "./Components/ProtectedRoute";
-import "./App.css";
 
 function App() {
   return (

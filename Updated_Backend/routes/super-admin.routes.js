@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerSuperAdmin, loginSuperAdmin } = require('../controller/auth.controller');
+const { registerSuperAdmin, loginSuperAdmin, verifyTokenAndGetUser } = require('../controller/auth.controller');
 const { verifyToken } = require('../middleware/auth.middleware');
 const { getAdminsList } = require("../controller/lists.controller");
 const { createAdmin } = require('../controller/insert.controller');
@@ -33,6 +33,35 @@ router.post("/login", async (req, res) => {
     }
     
     res.status(result.statusCode).json({ message: result.message });
+});
+
+// Verify token endpoint (for auto-login)
+router.get("/verify", async (req, res) => {
+    try {
+        // Get token from cookie or Authorization header
+        const token = req.cookies?.token || req.headers.authorization?.replace('Bearer ', '');
+        
+        if (!token) {
+            return res.status(401).json({ 
+                statusCode: 401,
+                message: 'No token provided' 
+            });
+        }
+        
+        const result = await verifyTokenAndGetUser(token);
+        
+        return res.status(result.statusCode).json({
+            statusCode: result.statusCode,
+            message: result.message,
+            data: result.data
+        });
+    } catch (error) {
+        console.error('Verify token error:', error);
+        return res.status(500).json({ 
+            statusCode: 500,
+            message: 'Internal server error' 
+        });
+    }
 });
 
 // Get admins list

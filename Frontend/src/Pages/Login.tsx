@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,10 +25,10 @@ const Login = () => {
 
       // For now, simulate authentication
       // In production, validate credentials with backend
-      if (email && password) {
+      if (username && password) {
         // Store authentication data in sessionStorage
         sessionStorage.setItem("super_admin_id", "1"); // Replace with actual ID from API
-        sessionStorage.setItem("user_email", email);
+        sessionStorage.setItem("user_email", username);
 
         // Navigate to admin list after successful login
         navigate("/admin-list");
@@ -55,7 +55,7 @@ const Login = () => {
       {/* Right Side - Login Form */}
       <div className="flex-1 bg-white flex items-center justify-center p-16">
         <div className="w-full max-w-md px-8">
-          <h2 className="text-4xl font-bold text-gray-800 mb-16">Login</h2>
+          <h2 className="text-4xl font-bold text-gray-800 mb-12">Login</h2>
           
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">
@@ -63,17 +63,17 @@ const Login = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8 mt-12">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-3">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-3">
                 Username
               </label>
               <input
-                type="email"
-                id="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                id="username"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 className="w-full px-5 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-gray-400 outline-none transition-all"
               />
