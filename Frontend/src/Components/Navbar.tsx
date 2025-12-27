@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { MdLogout } from "react-icons/md";
+import { clearAuth } from "../utils/auth";
 import "./Navbar.css";
 
 interface NavbarProps {
@@ -10,10 +11,10 @@ const Navbar = ({ activePage }: NavbarProps) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Clear session storage
-    sessionStorage.clear();
+    // Clear local storage (removes token, tokenExpiry, username, name)
+    clearAuth();
     // Navigate to login page
-    navigate("/");
+    navigate("/", { replace: true });
   };
 
   return (

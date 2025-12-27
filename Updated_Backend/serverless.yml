@@ -6,6 +6,21 @@ provider:
   runtime: nodejs18.x
   stage: dev
   region: us-east-1
+  
+  httpApi:
+    cors:
+      allowedOrigins:
+        - ${env:FRONTEND_URL}
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+      allowCredentials: true
+  
   environment:
     DB_HOST: ${env:DB_HOST}
     DB_PORT: ${env:DB_PORT}
@@ -13,111 +28,90 @@ provider:
     DB_PASSWORD: ${env:DB_PASSWORD}
     DB_NAME: ${env:DB_NAME}
     SECURE_CODE: ${env:SECURE_CODE}
+    JWT_SECRET: ${env:JWT_SECRET}
+    REDIS_HOST: ${env:REDIS_HOST}
+    REDIS_PORT: ${env:REDIS_PORT}
+    REDIS_PASSWORD: ${env:REDIS_PASSWORD}
+    NODE_ENV: ${env:NODE_ENV}
+    FRONTEND_URL: ${env:FRONTEND_URL}
 
 functions:
   registerSuperAdmin:
-    handler: lambda/authsignUpHandler
+    handler: lambda/auth.signUpHandler
     events:
-      - http:
-          path: api/super-admin/v1/auth/signup
-          method: post
-          cors: true
+      - httpApi:
+          path: /api/super-admin/v1/auth/signup
+          method: POST
 
   loginSuperAdmin:
     handler: lambda/auth.loginHandler
     events:
-      - http:
-          path: api/super-admin/v1/auth/login
-          method: post
-          cors: true
+      - httpApi:
+          path: /api/super-admin/v1/auth/login
+          method: POST
 
   verifyToken:
     handler: lambda/auth.verifyTokenHandler
     events:
-      - http:
-          path: api/super-admin/v1/auth/verify
-          method: get
-          cors: true
+      - httpApi:
+          path: /api/super-admin/v1/auth/verify
+          method: GET
 
   getAdminsList:
     handler: lambda/lists.getAdminsListHandler
     events:
-      - http:
-          path: api/super-admin/v1/admins-list
-          method: get
-          cors: true
+      - httpApi:
+          path: /api/super-admin/v1/admins-list
+          method: GET
 
   createAdmin:
     handler: lambda/insert.createAdminHandler
     events:
-      - http:
-          path: api/super-admin/v1/create-admin
-          method: post
-          cors: true
+      - httpApi:
+          path: /api/super-admin/v1/create-admin
+          method: POST
 
   updatePaymentStatus:
     handler: lambda/insert.updatePaymentStatusHandler
     events:
-      - http:
-          path: api/super-admin/v1/update-payment-status
-          method: put
-          cors: true
+      - httpApi:
+          path: /api/super-admin/v1/update-payment-status
+          method: PUT
 
   getAdminDetails:
     handler: lambda/insert.getAdminDetailsHandler
     events:
-      - http:
-          path: api/super-admin/v1/admin-details/{adminId}
-          method: get
-          cors: true
-          request:
-            parameters:
-              paths:
-                adminId: true
+      - httpApi:
+          path: /api/super-admin/v1/admin-details/{adminId}
+          method: GET
 
   deleteAdmin:
     handler: lambda/insert.deleteAdminHandler
     events:
-      - http:
-          path: api/super-admin/v1/delete-admin/{adminId}
-          method: delete
-          cors: true
-          request:
-            parameters:
-              paths:
-                adminId: true
+      - httpApi:
+          path: /api/super-admin/v1/delete-admin/{adminId}
+          method: DELETE
 
   getReport:
     handler: lambda/report.getReportHandler
     events:
-      - http:
-          path: api/super-admin/v1/report-summary
-          method: get
-          cors: true
+      - httpApi:
+          path: /api/super-admin/v1/report-summary
+          method: GET
 
   getMonthRevenue:
     handler: lambda/report.getMonthRevenueHandler
     events:
-      - http:
-          path: api/super-admin/v1/month-revenue/{month}
-          method: get
-          cors: true
-          request:
-            parameters:
-              paths:
-                month: true
+      - httpApi:
+          path: /api/super-admin/v1/month-revenue/{month}
+          method: GET
 
   getYearlyRevenueGraph:
     handler: lambda/report.getYearlyRevenueGraphHandler
     events:
-      - http:
-          path: api/super-admin/v1/year-graph/{year}
-          method: get
-          cors: true
-          request:
-            parameters:
-              paths:
-                year: true
+      - httpApi:
+          path: /api/super-admin/v1/year-graph/{year}
+          method: GET
 
 plugins:
   - serverless-offline
@@ -126,3 +120,11 @@ custom:
   serverless-offline:
     useDocker: false
     noPrependStageInUrl: true
+    httpPort: 3000
+    # Hapi server options to handle cookies properly
+    hapiOptions:
+      state:
+        strictHeader: false
+        ignoreErrors: true
+        isSecure: false
+        isSameSite: false

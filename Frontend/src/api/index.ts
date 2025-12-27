@@ -1,9 +1,18 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/dev';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/super-admin/v1';
+
+// Helper function to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+  };
+};
 
 // Auth APIs
 export const authAPI = {
   login: async (username: string, password: string) => {
-    const response = await fetch(`${API_BASE_URL}/login`, {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -12,14 +21,15 @@ export const authAPI = {
     });
     
     if (!response.ok) {
-      throw new Error('Login failed');
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Login failed');
     }
     
     return response.json();
   },
 
   verifyToken: async (token: string) => {
-    const response = await fetch(`${API_BASE_URL}/verify`, {
+    const response = await fetch(`${API_BASE_URL}/auth/verify`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -38,13 +48,10 @@ export const authAPI = {
 // Admin APIs
 export const adminAPI = {
   // Get list of all admins
-  getAdminsList: async (token: string) => {
+  getAdminsList: async () => {
     const response = await fetch(`${API_BASE_URL}/admins-list`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
@@ -55,7 +62,7 @@ export const adminAPI = {
   },
 
   // Create new admin
-  createAdmin: async (token: string, adminData: {
+  createAdmin: async (adminData: {
     fullName: string;
     email: string;
     mobileNumber: string;
@@ -66,10 +73,7 @@ export const adminAPI = {
   }) => {
     const response = await fetch(`${API_BASE_URL}/create-admin`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(adminData),
     });
     
@@ -81,13 +85,10 @@ export const adminAPI = {
   },
 
   // Get admin details by ID
-  getAdminDetails: async (token: string, adminId: string) => {
+  getAdminDetails: async (adminId: string) => {
     const response = await fetch(`${API_BASE_URL}/admin-details/${adminId}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
@@ -98,13 +99,10 @@ export const adminAPI = {
   },
 
   // Update payment status
-  updatePaymentStatus: async (token: string, adminId: string, isPaid: boolean) => {
+  updatePaymentStatus: async (adminId: string, isPaid: boolean) => {
     const response = await fetch(`${API_BASE_URL}/update-payment`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ adminId, isPaid }),
     });
     
@@ -116,13 +114,10 @@ export const adminAPI = {
   },
 
   // Delete admin
-  deleteAdmin: async (token: string, adminId: string) => {
+  deleteAdmin: async (adminId: string) => {
     const response = await fetch(`${API_BASE_URL}/delete-admin/${adminId}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
@@ -136,13 +131,10 @@ export const adminAPI = {
 // Report APIs
 export const reportAPI = {
   // Get report data
-  getReport: async (token: string) => {
+  getReport: async () => {
     const response = await fetch(`${API_BASE_URL}/report`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
@@ -153,13 +145,10 @@ export const reportAPI = {
   },
 
   // Get monthly revenue
-  getMonthRevenue: async (token: string, month: number) => {
+  getMonthRevenue: async (month: number) => {
     const response = await fetch(`${API_BASE_URL}/month-revenue?month=${month}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) {
@@ -170,13 +159,10 @@ export const reportAPI = {
   },
 
   // Get yearly revenue graph
-  getYearlyRevenueGraph: async (token: string, year: number) => {
+  getYearlyRevenueGraph: async (year: number) => {
     const response = await fetch(`${API_BASE_URL}/yearly-revenue-graph?year=${year}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
     });
     
     if (!response.ok) {

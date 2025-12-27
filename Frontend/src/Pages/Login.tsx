@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { authAPI } from "../api/index";
+import { setAuthToken, setUserData, getAuthToken, clearAuth } from "../utils/auth";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -10,30 +12,49 @@ const Login = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = getAuthToken();
+      
+      if (token) {
+        try {
+          // Verify token with backend
+          await authAPI.verifyToken(token);
+          // Token is valid, redirect to admin list
+          navigate("/admin-list", { replace: true });
+        } catch (err) {
+          // Token is invalid, clear storage
+          clearAuth();
+        }
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API endpoint
-      // const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // });
+      // Call login API
+      const response = await authAPI.login(username, password);
 
-      // For now, simulate authentication
-      // In production, validate credentials with backend
-      if (username && password) {
-        // Store authentication data in sessionStorage
-        sessionStorage.setItem("super_admin_id", "1"); // Replace with actual ID from API
-        sessionStorage.setItem("user_email", username);
+      if (response.statusCode === 200) {
+        // Store token with 24hr expiry
+        if (response.token) {
+          setAuthToken(response.token, 24);
+        }
+        
+        // Store user data
+        setUserData(username, response.name);
 
         // Navigate to admin list after successful login
         navigate("/admin-list");
       } else {
-        setError("Please enter valid credentials");
+        setError(response.message || "Invalid credentials");
       }
     } catch (err) {
       console.error("Login error:", err);
