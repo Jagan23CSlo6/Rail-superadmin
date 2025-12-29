@@ -132,9 +132,10 @@ export const adminAPI = {
 export const reportAPI = {
   // Get report data
   getReport: async () => {
-    const response = await fetch(`${API_BASE_URL}/report`, {
+    const response = await fetch(`${API_BASE_URL}/report-summary`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     
     if (!response.ok) {
@@ -146,9 +147,10 @@ export const reportAPI = {
 
   // Get monthly revenue
   getMonthRevenue: async (month: number) => {
-    const response = await fetch(`${API_BASE_URL}/month-revenue?month=${month}`, {
+    const response = await fetch(`${API_BASE_URL}/month-revenue/${month}`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     
     if (!response.ok) {
@@ -160,9 +162,10 @@ export const reportAPI = {
 
   // Get yearly revenue graph
   getYearlyRevenueGraph: async (year: number) => {
-    const response = await fetch(`${API_BASE_URL}/yearly-revenue-graph?year=${year}`, {
+    const response = await fetch(`${API_BASE_URL}/year-graph/${year}`, {
       method: 'GET',
       headers: getAuthHeaders(),
+      credentials: 'include',
     });
     
     if (!response.ok) {

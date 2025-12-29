@@ -22,7 +22,7 @@ module.exports.getReport = async () => {
     
     const result = await sendReport();
 
-    if (result.success) {
+    if (!result.success) {
         return {
             statusCode: 500,
             message: "Failed to fetch report data"
@@ -71,9 +71,10 @@ module.exports.getMonthRevenue = async (month) => {
     }
 
     const cacheKey = `month_revenue_${monthNumber}`;
+    let redisClient;
     
     try {
-        const redisClient = await getRedisClient();
+        redisClient = await getRedisClient();
         const cachedData = await redisClient.get(cacheKey);
         
         if (cachedData) {
@@ -98,7 +99,9 @@ module.exports.getMonthRevenue = async (month) => {
 
     // Cached for 1 day
     try {
-        await redisClient.setEx(cacheKey, 86400, JSON.stringify(result.data));
+        if (redisClient) {
+            await redisClient.setEx(cacheKey, 86400, JSON.stringify(result.data));
+        }
     } catch (redisError) {
         console.error('Redis set error:', redisError);
     }
